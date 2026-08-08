@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>YouTube Downloader Pro — Download videos & playlists from YouTube</title>
+  <meta name="description" content="A fast, modern desktop app to download YouTube videos, playlists and audio. Native C++ splash, 4K support, playlists, batch downloads. Download the .deb installer.">
+  <link rel="icon" type="image/png" href="youtube-dl.png">
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand: #ff3333;
+      --brand-dark: #e02e2e;
+      --accent: #2563eb;
+      --green: #16a34a;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 14px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---------- Navbar ---------- */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; color: var(--text); }
+    .brand:hover { text-decoration: none; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { color: var(--muted); font-size: 0.95rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-cta {
+      background: var(--accent); color: #fff !important;
+      padding: 8px 16px; border-radius: 8px; font-weight: 600;
+    }
+    .nav-cta:hover { background: #1d4ed8; }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      background:
+        radial-gradient(1100px 500px at 80% -10%, rgba(255, 51, 51, 0.10), transparent 60%),
+        radial-gradient(900px 500px at 10% -10%, rgba(37, 99, 235, 0.08), transparent 60%),
+        var(--bg);
+      padding: 80px 0 60px;
+    }
+    .hero .container {
+      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; border: 1px solid var(--border);
+      color: var(--muted); font-size: 0.8rem; font-weight: 600;
+      padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;
+    }
+    .eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    h1 { font-size: clamp(2.2rem, 5vw, 3.3rem); line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 18px; }
+    h1 .highlight { color: var(--brand); }
+    .tagline { font-size: 1.15rem; color: var(--muted); max-width: 540px; margin-bottom: 34px; }
+    .hero-buttons { display: flex; flex-wrap: wrap; gap: 14px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 14px 26px; border-radius: 10px; font-size: 1rem; font-weight: 600;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      border: none; cursor: pointer;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-1px); }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover { background: #1d4ed8; box-shadow: 0 10px 24px rgba(37, 99, 235, 0.4); }
+    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: #cbd5e1; background: #f1f5f9; }
+    .btn-green { background: var(--green); color: #fff; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3); }
+    .btn-green:hover { background: #15803d; }
+    .tiny { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
+    .tiny code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+    .hero-art {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px; text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .hero-art img { width: 100%; max-width: 300px; margin-bottom: 6px; }
+    .hero-art .caption { font-size: 0.85rem; color: var(--muted); }
+
+    /* ---------- Sections ---------- */
+    section { padding: 64px 0; }
+    section h2 { font-size: clamp(1.6rem, 3vw, 2rem); letter-spacing: -0.01em; margin-bottom: 12px; }
+    .section-sub { color: var(--muted); max-width: 640px; margin-bottom: 40px; }
+
+    /* ---------- Features ---------- */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .card .icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+    .card p { font-size: 0.92rem; color: var(--muted); }
+
+    /* ---------- Download / install ---------- */
+    .download-card {
+      background: linear-gradient(135deg, #ffffff, #f1f5f9);
+      border: 1px solid var(--border); border-radius: 18px;
+      padding: 40px; text-align: center;
+    }
+    .download-card .big { font-size: 2.4rem; }
+    .download-card h2 { margin-top: 6px; }
+    .download-card .sub { color: var(--muted); margin-bottom: 28px; }
+    .install { text-align: left; margin-top: 34px; }
+    .install h4 { margin-bottom: 10px; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    pre {
+      background: #0f172a; color: #e2e8f0;
+      padding: 20px 22px; border-radius: 12px; overflow-x: auto;
+      font-size: 0.9rem; line-height: 1.7;
+    }
+    pre .c { color: #94a3b8; }
+    pre .v { color: #93c5fd; }
+
+    /* ---------- Platform / tech ---------- */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .table-card h3 { padding: 18px 22px; border-bottom: 1px solid var(--border); font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    td { padding: 12px 22px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    td:last-child { text-align: right; color: var(--muted); }
+    .yes { color: var(--green); font-weight: 600; }
+
+    /* ---------- Footer ---------- */
+    footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 32px 0; text-align: center; color: var(--muted); font-size: 0.88rem;
+    }
+    footer a { color: var(--text); font-weight: 600; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .hero .container { grid-template-columns: 1fr; gap: 36px; text-align: center; }
+      .hero-art { order: -1; }
+      .tagline { margin-left: auto; margin-right: auto; }
+      .hero-buttons { justify-content: center; }
+      .features { grid-template-columns: 1fr 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .features { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a class="brand" href="#">
+        <img src="youtube-dl.png" alt="YouTube Downloader logo">
+        YouTube Downloader
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="#download" class="nav-cta">⬇ Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="home">
+    <div class="container">
+      <div>
+        <span class="eyebrow"><span class="dot"></span> Latest release &nbsp;·&nbsp; v1.0.0</span>
+        <h1>Download any YouTube video, <span class="highlight">fast & effortless.</span></h1>
+        <p class="tagline">
+          A modern desktop app with a lightning-fast native C++ splash. Grab
+          videos in up to 4K, rip playlists, extract audio and queue hundreds of
+          downloads in parallel.
+        </p>
+        <div class="hero-buttons">
+          <a class="btn btn-green" href="https://github.com/mubashirtech56/youtube-downloader/releases/download/v1.0.0/youtube-downloader_1.0.0_amd64.deb">
+            ⬇ Download .deb
+          </a>
+          <a class="btn btn-primary" href="https://github.com/mubashirtech56/youtube-downloader/releases/tag/v1.0.0">
+            View Release
+          </a>
+          <a class="btn btn-outline" href="https://github.com/mubashirtech56/youtube-downloader">
+             View Source
+          </a>
+        </div>
+        <p class="tiny">Linux · Debian/Ubuntu installer · <code>64-bit</code></p>
+      </div>
+      <div class="hero-art">
+        <img src="youtube-dl.png" alt="YouTube Downloader Pro logo">
+        <div class="caption">🎬 YouTube Downloader Pro</div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="container">
+      <h2>Everything you need</h2>
+      <p class="section-sub" style="color:var(--muted);margin-bottom:40px;">Packed with features while staying lightweight and responsive.</p>
+      <div class="features">
+        <div class="card"><div class="icon">⚡</div><h3>Instant startup</h3><p>Native C++17 splash draws while the UI boots — the window appears immediately.</p></div>
+        <div class="card"><div class="icon">🎥</div><h3>Up to 4K / 2160p</h3><p>Choose any resolution from 144p to 2160p, or let the app pick the best stream.</p></div>
+        <div class="card"><div class="icon">📃</div><h3>Playlist support</h3><p>Fetch playlists with thumbnails and batch-download every video at once.</p></div>
+        <div class="card"><div class="icon">⬇</div><h3>Concurrent queue</h3><p>Event-driven scheduler runs multiple downloads in parallel with live progress bars.</p></div>
+        <div class="card"><div class="icon">🎧</div><h3>Audio extraction</h3><p>Rip audio as MP3, M4A, OPUS, FLAC & more at 64–320 kbps.</p></div>
+        <div class="card"><div class="icon">🖼</div><h3>Rich metadata</h3><p>Thumbnail, channel, views, likes, duration and estimated file size.</p></div>
+        <div class="card"><div class="icon">🕒</div><h3>Download history</h3><p>Every download is saved locally and searchable & filterable.</p></div>
+        <div class="card"><div class="icon">🔑</div><h3>Cookie support</h3><p>Import a cookies.txt or use browser cookies for age-restricted videos.</p></div>
+        <div class="card"><div class="icon">🌗</div><h3>Light & Dark themes</h3><p>Sleek modern look with an in-app dark/light toggle.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="container">
+      <div class="download-card">
+        <div class="big">📦</div>
+        <h2>Download for Linux</h2>
+        <p class="sub">Debian / Ubuntu installer (amd64) · v1.0.0 · ~require ffmpeg</p>
+        <div class="hero-buttons" style="justify-content:center;">
+          <a class="btn btn-green" href="https://github.com/mubashirtech56/youtube-downloader/releases/download/v1.0.0/youtube-downloader_1.0.0_amd64.deb">
+            ⬇ Download .deb installer
+          </a>
+          <a class="btn btn-outline" href="https://github.com/mubashirtech56/youtube-downloader/releases/tag/v1.0.0">
+            📄 Release notes
+          </a>
+        </div>
+        <p class="tiny">Windows <code>.exe</code> build coming soon — meantime you can run from source.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" style="padding-top:0;">
+    <div class="container">
+      <h2>Installation</h2>
+      <p class="section-lead" style="color:var(--muted);margin-bottom:40px;">Choose the easy installer or run straight from source.</p>
+      <div class="two-col">
+        <div class="table-card">
+          <h3>📦 From the .deb package</h3>
+          <pre><code><span class="c"># Debian / Ubuntu</span>
+sudo apt install <span class="cm">./youtube-downloader_1.0.0_amd64.deb</span>
+
+<span class="c"># or from a direct download</span>
+sudo apt install <span class="cm">./youtube-downloader_1.0.0_amd64.deb</span>
+
+<span class="cm"># launch</span>
+youtube-downloader</code></pre>
+        </div>
+        <div class="table-card">
+          <h3>🐍 Run from source</h3>
+          <pre><code>git clone <span class="cm">https://github.com/mubashirtech56/youtube-downloader.git</span>
+<span class="c">cd youtube-downloader</span>
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="platform" style="padding-top:0;">
+    <div class="container">
+      <h2>Platform support</h2>
+      <p class="section-lead" style="color:var(--muted);margin-bottom:40px;">Packaged for the most popular desktop platforms.</p>
+      <div class="two-col">
+        <div class="table-card">
+          <h3>Installer</h3>
+          <table>
+            <tr><td>Linux (Debian/Ubuntu)</td><td class="yes">✅ .deb</td></tr>
+            <tr><td>Windows</td><td>✅ .exe (via source build)</td></tr>
+            <tr><td>macOS</td><td>⚠ Not yet</td></tr>
+          </table>
+        </div>
+        <div class="table-card">
+          <h3>Tech stack</h3>
+          <table>
+            <tr><td>GUI</td><td>CustomTkinter 6.0.0</td></tr>
+            <tr><td>Download engine</td><td>yt-dlp 2026.7.4</td></tr>
+            <tr><td>Splash</td><td>C++17</td></tr>
+            <tr><td>Packaging</td><td>PyInstaller + dpkg-deb</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      © 2026 <a href="https://github.com/mubashirtech56">mubashirtech56</a> · Built with ❤️ ·
+      <a href="https://github.com/mubashirtech56/youtube-downloader">GitHub Repository</a> ·
+      <a href="https://opensource.org/licenses/MIT">MIT License</a>
+    </div>
+  </footer>
+
+</body>
+</html>
