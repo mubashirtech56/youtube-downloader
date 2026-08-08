@@ -1,0 +1,74 @@
+# ============================================================================
+# Python
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+*.spec
+
+# keep the build/ script SOURCES, ignore everything they produce
+build/icons/
+build/youtube-downloader/
+build/deb-root/
+build/pyi/
+build/launcher
+.coverage
+.coverletters
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ============================================================================
+# Virtualenv
+# ============================================================================
+venv/
+.venv/
+ENV/
+env/
+
+# ============================================================================
+# App bundles / installers (keep away from the repo)
+# ============================================================================
+dist/
+*.deb
+*.rpm
+*.dmg
+*.exe
+*.msi
+*.app
+*.AppImage
+youtube-downloader
+/launcher.exe
+
+# Native launcher binaries (rebuilt from source by make/build scripts)
+/splash/launcher
+
+# ============================================================================
+# Logs & runtime data
+# ============================================================================
+*.log
+logs/
+*.sqlite3
+*.db
+
+# ============================================================================
+# User data / secrets — these are personal, never commit them
+# ============================================================================
+cookies.txt
+*.txt.metadata
+*netscape*
+/*.uuid.txt
+[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*.txt
+
+# ============================================================================
+# OS / edit.or cruft
+# ============================================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
