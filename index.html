@@ -3,24 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="dark">
+  <script>
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("ydl-theme"); } catch (e) {}
+      var theme = saved === "light" || saved === "dark" ? saved : "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+      window.__ydlTheme = theme;
+    })();
+  </script>
   <title>YouTube Downloader Pro — Download videos & playlists from YouTube</title>
   <meta name="description" content="A fast, modern desktop app to download YouTube videos, playlists and audio. Native C++ splash, 4K support, playlists, batch downloads. Download the .deb installer.">
   <link rel="icon" type="image/png" href="youtube-dl.png">
 
   <style>
+    /* Dark theme is the default */
     :root {
+      --bg: #0b1220;
+      --bg-soft: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #16233a;
+      --border: #2e3f55;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --brand: #ff4d4d;
+      --brand-dark: #e02e2e;
+      --accent: #3b82f6;
+      --accent-strong: #2563eb;
+      --green: #22c55e;
+      --green-strong: #16a34a;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      --nav-bg: rgba(15, 23, 42, 0.82);
+      --radius: 14px;
+    }
+
+    html[data-theme="light"] {
       --bg: #f8fafc;
+      --bg-soft: #ffffff;
       --surface: #ffffff;
+      --surface-2: #f1f5f9;
       --border: #e2e8f0;
       --text: #0f172a;
       --muted: #64748b;
       --brand: #ff3333;
       --brand-dark: #e02e2e;
       --accent: #2563eb;
+      --accent-strong: #1d4ed8;
       --green: #16a34a;
+      --green-strong: #15803d;
       --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-      --radius: 14px;
+      --nav-bg: rgba(255, 255, 255, 0.85);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -33,6 +66,7 @@
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      transition: background 0.25s ease, color 0.25s ease;
     }
 
     a { color: var(--accent); text-decoration: none; }
@@ -43,8 +77,9 @@
     /* ---------- Navbar ---------- */
     nav {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(255, 255, 255, 0.85);
+      background: var(--nav-bg);
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
     }
     nav .container {
@@ -61,13 +96,21 @@
       background: var(--accent); color: #fff !important;
       padding: 8px 16px; border-radius: 8px; font-weight: 600;
     }
-    .nav-cta:hover { background: #1d4ed8; }
+    .nav-cta:hover { background: var(--accent-strong); }
+    .theme-toggle {
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px;
+      width: 36px; height: 36px; font-size: 1.05rem; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .theme-toggle:hover { background: var(--surface-2); transform: scale(1.06); }
 
     /* ---------- Hero ---------- */
     .hero {
       background:
-        radial-gradient(1100px 500px at 80% -10%, rgba(255, 51, 51, 0.10), transparent 60%),
-        radial-gradient(900px 500px at 10% -10%, rgba(37, 99, 235, 0.08), transparent 60%),
+        radial-gradient(1100px 500px at 80% -10%, rgba(255, 51, 51, 0.18), transparent 60%),
+        radial-gradient(900px 500px at 10% -10%, rgba(59, 130, 246, 0.14), transparent 60%),
         var(--bg);
       padding: 80px 0 60px;
     }
@@ -76,7 +119,7 @@
     }
     .eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
-      background: #fff; border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       color: var(--muted); font-size: 0.8rem; font-weight: 600;
       padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;
     }
@@ -96,13 +139,13 @@
       background: var(--accent); color: #fff;
       box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
     }
-    .btn-primary:hover { background: #1d4ed8; box-shadow: 0 10px 24px rgba(37, 99, 235, 0.4); }
-    .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
-    .btn-outline:hover { border-color: #cbd5e1; background: #f1f5f9; }
+    .btn-primary:hover { background: var(--accent-strong); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.4); }
+    .btn-outline { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--muted); background: var(--surface-2); }
     .btn-green { background: var(--green); color: #fff; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3); }
-    .btn-green:hover { background: #15803d; }
+    .btn-green:hover { background: var(--green-strong); }
     .tiny { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
-    .tiny code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+    .tiny code { background: var(--surface-2); color: var(--muted); padding: 2px 6px; border-radius: 6px; }
     .hero-art {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 18px; padding: 28px; text-align: center;
@@ -130,7 +173,7 @@
 
     /* ---------- Download / install ---------- */
     .download-card {
-      background: linear-gradient(135deg, #ffffff, #f1f5f9);
+      background: linear-gradient(135deg, var(--surface), var(--surface-2));
       border: 1px solid var(--border); border-radius: 18px;
       padding: 40px; text-align: center;
     }
@@ -140,7 +183,8 @@
     .install { text-align: left; margin-top: 34px; }
     .install h4 { margin-bottom: 10px; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
     pre {
-      background: #0f172a; color: #e2e8f0;
+      background: #0b1220; color: #e2e8f0;
+      border: 1px solid var(--border);
       padding: 20px 22px; border-radius: 12px; overflow-x: auto;
       font-size: 0.9rem; line-height: 1.7;
     }
@@ -176,6 +220,7 @@
     }
     @media (max-width: 600px) {
       .nav-links { display: none; }
+      .theme-toggle { display: none; }
       .features { grid-template-columns: 1fr; }
     }
   </style>
@@ -192,6 +237,9 @@
         <a href="#features">Features</a>
         <a href="#install">Install</a>
         <a href="#download" class="nav-cta">⬇ Download</a>
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light / dark theme" style="align-self:center;">
+          ☀️
+        </button>
       </div>
     </div>
   </nav>
@@ -326,5 +374,23 @@ python main.py</code></pre>
     </div>
   </footer>
 
+  <script>
+    (function () {
+      var btn = document.getElementById("themeToggle");
+      function sync() {
+        var theme = (document.documentElement.getAttribute("data-theme") || "dark");
+        if (btn) btn.textContent = theme === "dark" ? "☀️" : "🌙";
+        btn.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+      }
+      sync();
+      btn.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme");
+        var next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        try { localStorage.setItem("ydl-theme", next); } catch (e) {}
+        sync();
+      });
+    })();
+  </script>
 </body>
 </html>
