@@ -16,9 +16,11 @@ import os
 import sys
 from pathlib import Path
 
-# Allow PySide6 to run on headless/CI machines during tests.
-if os.environ.get("QT_QPA_PLATFORM") is None and not os.environ.get("DISPLAY"):
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# Only force the offscreen platform on headless Linux/macOS (CI/tests).
+# On Windows we must use the native "windows" platform or the GUI never shows.
+if os.environ.get("QT_QPA_PLATFORM") is None and sys.platform != "win32":
+    if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 
 def main():

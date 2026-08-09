@@ -1,8 +1,11 @@
 """Core utilities shared across all layers."""
 
-import re
-import sys
 import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -94,15 +97,35 @@ def data_dir() -> Path:
     return Path.home() / ".youtube_downloader"
 
 
-def setup_logging() -> None:
-    import logging
+def bundled_js_runtime() -> Optional[str]:
+    """Locate the bundled Deno JS runtime used by yt-dlp.
 
+    YouTube requires yt-dlp to solve an "n" signature challenge in JavaScript;
+    without a runtime the extractor returns only storyboard stubs. The build
+    bundles Deno inside the app, so this checks (in order) the frozen bundle,
+    the project's `deno/` folder and finally PATH.
+    """
+    exe = "deno.exe" if os.name == "nt" else "deno"
+    candidates = []
+    base = getattr(sys, "_MEIPASS", None)  # frozen one-file/one-dir bundle
+    if base:
+        candidates.append(os.path.join(base, "deno", exe))
+    project_root = Path(__file__).resolve().parent.parent.parent
+    candidates.append(str(project_root / "deno" / exe))
+    candidates.append(exe)
+    for cand in candidates:
+        if cand and os.path.isfile(cand):
+            return cand
+    return shutil.which(exe)
+
+
+def setup_logging() -> None:
     global logger
     log_dir = data_dir() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d')}.log"
 
-    debug = __import__("os").environ.get("YOUTUBE_DOWNLOADER_DEBUG") == "1"
+    debug = os.environ.get("YOUTUBE_DOWNLOADER_DEBUG") == "1"
     file_handler = logging.FileHandler(log_file)
     file_handler.setLevel(logging.DEBUG if debug else logging.INFO)
     console = logging.StreamHandler(sys.stdout)
@@ -119,13 +142,10 @@ def setup_logging() -> None:
 
 def open_folder(path: str) -> None:
     """Open a folder in the OS file manager (fire-and-forget)."""
-    import os
-    import subprocess
-
     try:
         if sys.platform == "win32":
             os.startfile(path)
         else:
-            subprocess.Popen(f'xdg-open "{path}"', shell=True)
+            subprocess.Popen(["xdg-open", path])
     except Exception:
         pass

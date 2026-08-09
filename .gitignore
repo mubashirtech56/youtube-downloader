@@ -7,16 +7,8 @@ __pycache__/
 *.so
 *.egg-info/
 .eggs/
-*.spec
-
-# keep the build/ script SOURCES, ignore everything they produce
-build/icons/
-build/youtube-downloader/
-build/deb-root/
-build/pyi/
-build/launcher
 .coverage
-.coverletters
+.coverage.*
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -30,9 +22,27 @@ ENV/
 env/
 
 # ============================================================================
-# App bundles / installers (keep away from the repo)
+# Build / packaging output (keep build scripts, specs and sources)
 # ============================================================================
+build/deb-root/
+build/youtube-downloader/
+build/icons/
+build/pyi/
+build/pyi-build/
+build/pyi-linux/
+build/launcher
 dist/
+dist-*/
+
+# Native launcher binary (rebuilt from source by make/build scripts)
+/splash/launcher
+
+# Bundled Deno JS runtime (downloaded by build scripts, ~90 MB)
+/deno/
+
+# ============================================================================
+# Release artifacts - distributed via GitHub Releases, never committed
+# ============================================================================
 *.deb
 *.rpm
 *.dmg
@@ -40,11 +50,9 @@ dist/
 *.msi
 *.app
 *.AppImage
-youtube-downloader
-/launcher.exe
-
-# Native launcher binaries (rebuilt from source by make/build scripts)
-/splash/launcher
+*.zip
+*.tar
+*.tar.gz
 
 # ============================================================================
 # Logs & runtime data
@@ -55,7 +63,7 @@ logs/
 *.db
 
 # ============================================================================
-# User data / secrets — these are personal, never commit them
+# User data / secrets - personal, never commit them
 # ============================================================================
 cookies.txt
 *.txt.metadata
@@ -64,7 +72,7 @@ cookies.txt
 [0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*.txt
 
 # ============================================================================
-# OS / edit.or cruft
+# OS / editor cruft
 # ============================================================================
 .DS_Store
 Thumbs.db

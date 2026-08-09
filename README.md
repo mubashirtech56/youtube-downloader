@@ -2,16 +2,15 @@
 
 # 🎬 YouTube Downloader Pro
 
-**A fast, modern desktop application to download YouTube videos, playlists and audio — with a native C++ splash that makes startup instant.**
+**A fast, modern desktop application for Linux and Windows to download YouTube videos, playlists and audio — with a native C++ splash screen that makes startup instant.**
 
-[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![UI](https://img.shields.io/badge/UI-PySide6%20(Qt%206)-41CD52?logo=qt)](https://doc.qt.io/qtforpython-6/)
-[![Downloader](https://img.shields.io/badge/Engine-yt--dlp-red)](https://github.com/yt-dlp/yt-dlp)
-[![Architecture](https://img.shields.io/badge/Architecture-MVC-blueviolet)](#architecture)
+[![Engine](https://img.shields.io/badge/Engine-yt--dlp-red)](https://github.com/yt-dlp/yt-dlp)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-lightgrey)](#platform-support)
-[![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/Version-v3.0.0-blue)](#version)
 
-![YouTube Downloader screenshot](youtube-dl.png)
+![YouTube Downloader logo](youtube-dl.png)
 
 </div>
 
@@ -19,139 +18,178 @@
 
 ## ✨ Features
 
-- **⚡ Instant startup** — a native C++17 splash screen (SDL-Free, pure X11/Win32) draws while the UI boots, so the window appears immediately.
-- **🎥 Single video downloads** — pick from every available resolution, from `144p` up to `4K/2160p`.
-- **📃 Playlist support** — fetch entire playlists with thumbnails, and batch-download them all at once.
-- **⬇ Concurrent batch queue** — an event-driven scheduler runs up to *N* simultaneous downloads (configurable) with live progress bars.
-- **🎧 Audio extraction** — rip audio as `MP3`, `M4A`, `OPUS`, `FLAC` and more, at bitrates from `64–320 kbps`.
-- **🎨 Format selection** — choose your output container (`MP4`, `MKV`, `WebM`, `AVI`, `MOV`), or let the app pick the best available stream.
-- **🖼 Rich video metadata** — thumbnail, channel, duration, upload date, views, likes, description and estimated file size.
-- **🕒 Download history** — every download is persisted locally and searchable/filterable.
-- **🔑 Cookie support** — load a Netscape `cookies.txt` or your browser cookies to download age-restricted or private videos.
-- **🌗 Light & Dark themes** — sleek Modern-Dark aesthetic with an easy one-click theme toggle.
-- **⚙ Customizable defaults** — default quality, audio bitrate, container, output folder and download concurrency live in a settings page.
+- **⚡ Instant startup** — a native C++17 splash draws while the Qt UI boots.
+- **🎥 Single-video downloads** — pick from every stream YouTube exposes, up to the video's native resolution (4K/2160p when available).
+- **📃 Playlist support** — fetch playlists with thumbnails and batch-download the whole list.
+- **⬇ Concurrent batch queue** — an event-driven scheduler runs multiple downloads in parallel (concurrency configurable in Settings).
+- **🎧 Audio extraction** — download audio-only streams and extract to **MP3** at 64–320 kbps via ffmpeg.
+- **🖼 Rich metadata** — title, thumbnail, channel, views, likes, duration and estimated file size before you download.
+- **🕒 Download history** — every completed download is stored locally and is searchable/filterable.
+- **🔑 Cookie support** — import a Netscape `cookies.txt` or use cookies from an installed browser for restricted videos.
+- **🌗 Light & dark themes** — one-click toggle from the sidebar or Settings page.
+- **⚙ Settings** — download folder, maximum simultaneous downloads, and the default MP3 audio bitrate.
 
 ## 🖥 Platform Support
 
 | Platform | Status |
 | :--- | :--- |
-| **Linux (Debian/Ubuntu)** | ✅ `.deb` installer (`make deb`) + `ffmpeg` |
-| **Windows** | ✅ `.exe` (Windows toolchain, `build\build_windows.bat`) |
+| Linux (Debian/Ubuntu) | ✅ `.deb` installer (built on Linux) |
+| Windows | ✅ `.exe` installer (built on Windows) |
 | macOS | ⚠ Not yet packaged |
 
 ---
 
-## 🚀 Getting Started
+## Requirements
 
-### Prerequisites
-
-- **Python 3.11+** (developed on 3.13)
-- **ffmpeg** (required for merging video+audio and media conversion)
+- **Python 3.11+**
+- **ffmpeg** (required by yt-dlp for merging video+audio and for MP3 extraction). Install it yourself:
 
 ```bash
 # Debian / Ubuntu
 sudo apt install ffmpeg
 
-# macOS
-brew install ffmpeg
-
-# Windows
-choco install ffmpeg   # then add ffmpeg.exe to your PATH
+# Windows (chocolatey) — then add ffmpeg.exe to PATH
+choco install ffmpeg
 ```
 
-### Installation
+> The **JavaScript (Deno) runtime** that yt-dlp needs for YouTube ("n" signature challenge) is **bundled inside the shipped installers**, so users never install anything extra.
+
+## 🚀 Installation
+
+### Linux — from a `.deb`
+
+Download the installer for the current release (`v2.0.0`):
+
+- <https://github.com/mubashirtech56/youtube-downloader/releases/download/v2.0.0/youtube-downloader_1.0.0_amd64.deb>
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/mubashirtech56/youtube-downloader.git
-cd youtube-downloader
-
-# 2. Create a virtual environment and install dependencies
-python3 -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# 3. Run the app
-python main.py
-```
-
-> 💡 On GNU/Linux you can also use `make run` and `make test`.
-
----
-
-## 🛠 Building & Packaging
-
-The repo ships a `Makefile` that drives every build target:
-
-| Command | What it does |
-| :--- | :--- |
-| `make run` | Launch the app from the local venv |
-| `make test` | Run the unit test suite |
-| `make icons` | Regenerate icon set from `youtube-dl.png` |
-| `make launcher` | Rebuild the native C++ splash launcher (Linux) |
-| `make deb` | Build `dist/youtube-downloader_2.0.0_amd64.deb` |
-| `make windows` | Instructions for building the Windows `.exe` (Win machine) |
-| `make clean` | Remove all build artifacts |
-
-```bash
-# Build & install the Debian package
-make deb
-sudo apt install ./dist/youtube-downloader_*.deb
+sudo apt install ./youtube-downloader_1.0.0_amd64.deb
 youtube-downloader
 ```
 
-Windows executables are produced with **PyInstaller** from a Windows machine:
+### Windows — from the `.exe`
 
-```bat
-build\build_windows.bat
+Download the installer for the current release (`v2.0.0`):
+
+- <https://github.com/mubashirtech56/youtube-downloader/releases/download/v2.0.0/youtube-downloader.exe>
+
+Run `youtube-downloader.exe` — no installation step is required. (Add ffmpeg to your PATH if it isn't installed.)
+
+### Run from source
+
+```bash
+git clone https://github.com/mubashirtech56/youtube-downloader.git
+cd youtube-downloader
+
+python3 -m venv venv
+source venv/bin/activate            # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+python main.py
 ```
 
-The generated bundle glues together a PyInstaller `onedir` build of `main.py`, the bundled icon set, and the native launcher (C++17, `splash/launcher.cpp`) using an env-variable handshake (`YDL_SPLASH_READY`) so the splash hides the moment the real window is mapped.
+On GNU/Linux you can also use `make run` inside the repository.
+
+---
+
+## 🎮 Usage
+
+1. **Paste a URL** (video or playlist) and press **Fetch**.
+2. **Review the metadata** — title, thumbnail, channel, likes/views, duration.
+3. **Pick a format** — a resolution for video or a bitrate for audio, then **Start Download** (or **Add to Batch**).
+4. Watch it run on the **Downloading** page with live progress, speed and ETA.
+5. Finished items land in **History** (searchable/filterable).
+
+For age-restricted content, open **Account** → import a Netscape `cookies.txt` or select an installed browser, then re-fetch. If cookies are stale, the app automatically retries the fetch/download without them.
+
+## ⚙ Configuration
+
+Settings are stored in `~/.youtube_downloader/settings.json`:
+
+| Key | Meaning | Default |
+| :--- | :--- | :--- |
+| `download_folder` | where completed files go | `~/Downloads/YouTube` |
+| `max_concurrent_downloads` | parallel downloads | `3` |
+| `default_audio_quality` | MP3 bitrate (kbps) | `192` |
+| `theme` | `dark` or `light` | `dark` |
+| `cookie_file` / `cookie_browser` | cookie source for restricted videos | none |
+
+Logs and history are also written under `~/.youtube_downloader/`.
 
 ---
 
 ## 🏗 Architecture
 
-Built as a cleanly **layered** application so UI, business logic and the
-download engine can evolve independently:
+Cleanly layered so the UI, business logic and download engine can evolve independently:
 
 ```
-  PySide6 (Qt 6)          →   UI layer          (app/ui/*)
+  PySide6 (Qt 6)        →  UI layer          (app/ui)
         ↓
-  MainController          →   Controller/ViewModel (app/controllers)
+  MainController         →  ViewModel         (app/controllers)
         ↓
-  DownloadManager         →   Download Manager   (app/download)
+  DownloadManager        →  queue / workers   (app/download)
         ↓
-  yt-dlp / FFmpeg         →   Engine             (app/services + core)
+  yt-dlp / FFmpeg        →  engine            (app/services + core)
 ```
 
 | Layer | Location | Responsibility |
 | :--- | :--- | :--- |
-| **UI** | `app/ui/` | Qt widgets, pages, theming. Zero threading, zero network. |
-| **Controller** | `app/controllers/main_controller.py` | ViewModel: routes UI actions to services, reports results back via Qt signals. |
-| **Download Manager** | `app/download/manager.py` | Queue, concurrency, retries, progress throttling, cancellation; emits plain-dict snapshots over Qt signals. |
-| **Services** | `app/services/` | YouTube metadata extraction (`yt-dlp`) and thumbnail caching — blocking, thread-safe, widget-agnostic. |
-| **Core** | `app/core/` | Settings, history, models, utilities — no dependency on Qt or yt-dlp. |
+| UI | `app/ui/` | Qt widgets, pages, theming. No threads, no network. |
+| Controller | `app/controllers/main_controller.py` | Routes UI actions to services; reports back via Qt signals. |
+| Download manager | `app/download/manager.py` | Queue, concurrency, retries, cancellation. |
+| Services | `app/services/` | YouTube metadata extraction (`yt-dlp`), thumbnail caching, error mapping. |
+| Core | `app/core/` | Settings, history, models, utilities. No Qt / yt-dlp dependency. |
 
-Key benefits over the old CustomTkinter monolith:
-
-- **No UI in worker threads** — threads only produce Qt signals/plain dicts; the GUI never locks against a download.
-- **Queue + retry + cancellation logic is fully unit-testable** without a window or a network.
-- **Swap-in engine** — the service layer is the only place that touches `yt-dlp`.
+```
+youtube-downloader/
+├── main.py                  # Qt entry point
+├── requirements.txt         # Python dependencies
+├── Makefile                 # Build / run / test targets
+├── youtube-dl.png           # App logo / icon source
+├── youtube-downloader.spec  # PyInstaller spec (Windows .exe)
+├── index.html               # GitHub Pages landing page
+├── app/                     # Layered application package
+│   ├── core/                #   settings, history, models, utils
+│   ├── services/            #   YouTubeService, thumbnails, errors
+│   ├── download/            #   DownloadManager
+│   ├── controllers/         #   MainController (ViewModel)
+│   └── ui/                  #   main window, pages, theme
+├── build/                   # Packaging scripts + generated icons
+│   ├── build_deb.sh         #   .deb builder
+│   ├── build_windows.bat    #   Windows .exe builder
+│   ├── fetch_deno.py        #   Downloads the bundled Deno runtime
+│   ├── make_icons.py        #   Icon generation
+│   └── linux.spec           #   PyInstaller spec (Linux, onedir)
+├── splash/                  # Native C++ splash launcher sources
+│   ├── launcher.cpp         #   Linux
+│   └── launcher_win.cpp     #   Windows
+└── tests/
+    └── test_services.py     # Unit tests (no network required)
+```
 
 ---
 
-## 🎮 How to Use
+## 🛠 Building from source
 
-1. **Paste a URL** — single video `https://youtu.be/...` or a playlist link — and hit **Fetch**.
-2. **Review the metadata** — title, thumbnail, channel, likes/views, duration.
-3. **Pick a format** — a resolution for video or a bitrate for audio; the container dropdown sets the output type.
-4. **Download** — the item enters the queue, runs in parallel, and gets written to your chosen output folder.
-5. **Track progress** — the *Downloading* page shows real-time progress; finished items land in *History*.
+PyInstaller cannot cross-compile, so each artifact must be built on its own OS.
 
-Want age-restricted videos? Go to **Account** → import a `cookies.txt` in Netscape format (or select cookies from your browser) and re-fetch.
+### Linux — `.deb`
 
----
+```bash
+make deb                 # or: ./build/build_deb.sh
+```
+
+This fetches the Deno runtime into `deno/` (if absent), builds the app with the Linux spec, and packages `dist/youtube-downloader_<version>_amd64.deb` (default version `3.0.0`, override with `VERSION=... ./build/build_deb.sh`).
+
+### Windows — `.exe`
+
+```bat
+build\build_windows.bat
+```
+
+This installs dependencies, generates icons, fetches Deno, and produces `dist\youtube-downloader.exe` (one-file, windowed).
+
+Both build scripts auto-download **Deno** (`build/fetch_deno.py`) so the shipped binary can solve YouTube's JavaScript challenge without any user setup.
 
 ## 🧪 Testing
 
@@ -161,68 +199,32 @@ make test
 python -m unittest discover -s tests -v
 ```
 
-The suite covers the core services with mocks — URL validation, filename sanitization, size/duration formatting, format deduplication, caching, queue deduplication, and progress throttling — with no network required.
+The suite covers URL validation, filename sanitization, size/duration formatting, format deduping, caching, queue dedupe, progress throttling and history — with mocks, no network needed.
 
 ---
 
-## 📁 Project Layout
+## 📄 Version
 
-The code is organized around the layered architecture above:
+- **Codebase version:** `v3.0.0`
+- **Current published release (installers):** `v2.0.0` — the `.deb` is attached as `youtube-downloader_1.0.0_amd64.deb` and the Windows binary as `youtube-downloader.exe`.
 
-```
-youtube-downloader/
-├── main.py                  # Qt entry point (QApplication)
-├── requirements.txt         # Python dependencies
-├── Makefile                 # Build/run/test targets
-├── youtube-dl.png           # App logo
-├── app/                     # Application package (layered)
-│   ├── core/                #   Settings, History, models, utilities
-│   ├── services/            #   YouTubeService + ThumbnailCache (yt-dlp)
-│   ├── download/            #   DownloadManager (queue/workers/signals)
-│   ├── controllers/         #   MainController (ViewModel)
-│   └── ui/                  #   PySide6 widgets, theme, main window, pages
-├── build/                   # Packaging & assets
-│   ├── build_deb.sh         #   .deb builder
-│   ├── build_windows.bat    #   Windows .exe builder
-│   └── make_icons.py        #   Icon generation
-├── splash/                  # Native C++ splash launcher
-│   ├── launcher.cpp         #   Linux implementation
-│   └── launcher_win.cpp     #   Windows implementation
-└── tests/
-    └── test_services.py     # Unit tests (core + service + manager layers)
-```
+## 🔗 Releases
 
----
+Compiled binaries (`.deb`, `.exe`) are **never committed to this repository**. They are built locally (output in `dist/`, which is git-ignored) and uploaded to [GitHub Releases](https://github.com/mubashirtech56/youtube-downloader/releases) for the download links above to serve. Keep the uploaded asset **filenames** identical to the release links (`youtube-downloader.exe`, `youtube-downloader_1.0.0_amd64.deb`) so the URLs above keep working.
 
-## 🧰 Tech Stack
+## 🤝 Contributing
 
-| Layer | Technology |
-| :--- | :--- |
-| **GUI** | [PySide6 / Qt 6](https://doc.qt.io/qtforpython-6/) |
-| **Controller** | MainController (Qt signals / ViewModel) |
-| **Download engine** | [yt-dlp](https://github.com/yt-dlp/yt-dlp) 2026.7.4 + FFmpeg |
-| **Media tagging** | mutagen |
-| **Network / images** | requests • Pillow |
-| **Startup splash** | C++17 (`g++`), X11 / Win32 GDI |
-| **Packaging** | PyInstaller + `dpkg-deb` |
-
-### Dependencies
-
-```
-PySide6>=6.6
-yt-dlp==2026.7.4
-yt-dlp-ejs==0.8.0
-secretstorage==3.5.0
-Pillow==10.3.0
-requests==2.31.0
-mutagen==1.47.0
-```
-
----
+Found a bug or want a feature? Open an issue first, then submit a pull request. Keep changes focused, add/adjust unit tests in `tests/`, and run `make test` (or the equivalent on Windows) before submitting.
 
 ## 📝 License
 
-Distributed under the **MIT License**. See `LICENSE` for details.
+Distributed under the **MIT License** (see the LICENSE file in the repository).
+
+<!-- MIT is the license stated by this project; ensure a LICENSE file lands in the repo before first public release -->
+
+## ⚠️ Disclaimer
+
+This project is an **independent client for YouTube** built on top of `yt-dlp`/ffmpeg. It is not affiliated with, endorsed by, or sponsored by YouTube or Google. Downloading videos may violate YouTube's Terms of Service. You are solely responsible for how you use this software and for respecting applicable copyright laws in your jurisdiction. Download only content you have permission to download.
 
 ---
 

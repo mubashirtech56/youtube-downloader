@@ -1,78 +1,46 @@
 @echo off
 REM ===========================================================================
-REM Build a Windows .exe for the YouTube Downloader desktop app.
-REM Run this ON WINDOWS (inside the project folder, with the venv active or
-REM using the right python). PyInstaller cannot cross-compile from Linux.
+REM Build the Windows .exe for YouTube Downloader Pro.
+REM Run this ON WINDOWS (PyInstaller cannot cross-compile from Linux).
 REM
 REM   build\build_windows.bat
 REM
 REM Produces:  dist\youtube-downloader.exe
-REM
-REM The .exe bundles main.py (PySide6 + yt-dlp), the YouTube icon, and a
-REM native C++ splash launcher (splash\launcher_win.exe) so startup feels fast.
 REM ===========================================================================
 setlocal EnableDelayedExpansion
 
 set APP_NAME=youtube-downloader
-set PYTHON=python
 
 if exist venv\Scripts\python.exe (
     set PY=venv\Scripts\python.exe
 ) else if exist .venv\Scripts\python.exe (
     set PY=.venv\Scripts\python.exe
-)
-
-echo [win] using python: !PY!
-echo [win] version:      %VERSION%
-
-where g++.exe >nul 2>nul
-if errorlevel 1 (
-    where x86_64-w64-mingw32-g++.exe >nul 2>nul
-    if errorlevel 1 (
-        echo [win] GCC not found - skipping native splash launcher, building exe only.
-        goto :skip_splash
-    )
-    set GXX=x86_64-w64-mingw32-g++
 ) else (
-    set GXX=g++
+    set PY=python
 )
 
-REM ---- 1. Icons -------------------------------------------------------------
-%PY% build\make_icons.py
+echo [win] using python:   !PY!
+
+REM ---- 1. Install dependencies ---------------------------------------------
+echo [win] installing dependencies...
+!PY! -m pip install --quiet --upgrade -r requirements.txt
 if errorlevel 1 goto :fail
 
-REM ---- 2. Native C++ splash launcher ----------------------------------------
-echo [win] building native splash launcher
-%GXX% -O3 -std=c++17 -static -municode -mwindows ^
-     -o dist\launcher.exe splash\launcher_win.cpp -lgdi32
-if errorlevel 1 (
-    echo [win] launcher build failed -- continuing without it.
+REM ---- 2. Generate application icons ----------------------------------------
+echo [win] generating icons...
+!PY! build\make_icons.py
+if errorlevel 1 goto :fail
+
+REM ---- 3. Fetch the bundled Deno JS runtime (YouTube n-challenge solving) ----
+if not exist deno\deno.exe (
+    echo [win] downloading Deno JS runtime (~90 MB)...
+    !PY! build\fetch_deno.py
+    if errorlevel 1 goto :fail
 )
 
-:skip_splash
-
-REM ---- 3. PyInstaller bundle -------------------------------------------------
-echo [win] ensuring pyinstaller...
-%PY% -m pip install --quiet --upgrade pyinstaller
-
-echo [win] making icons...
-%PY% build\make_icons.py
-
-echo [win] building exe (this can take a few minutes)...
-%PY% -m PyInstaller ^
-    --noconfirm ^
-    --clean ^
-    --name %APP_NAME% ^
-    --onefile ^
-    --windowed ^
-    --icon build\icons\youtube-downloader.ico ^
-    --add-data "youtube-dl.png;." ^
-    --add-data "build\icons;icons" ^
-    --hidden-import secretstorage ^
-    --hidden-import jeepney ^
-    --hidden-import cffi ^
-    
-    main.py
+REM ---- 4. Build the .exe -----------------------------------------------------
+echo [win] building dist\%APP_NAME%.exe (this can take a few minutes)...
+!PY! -m PyInstaller --noconfirm --clean --distpath dist --workpath build\pyi-build youtube-downloader.spec
 if errorlevel 1 goto :fail
 
 echo.

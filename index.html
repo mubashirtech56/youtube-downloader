@@ -255,17 +255,17 @@
           downloads in parallel.
         </p>
         <div class="hero-buttons">
-          <a class="btn btn-green" href="https://github.com/mubashirtech56/youtube-downloader/releases/tag/v2.0.0">
-            ⬇ Download .deb
+          <a class="btn btn-green" href="https://github.com/mubashirtech56/youtube-downloader/releases/download/v2.0.0/youtube-downloader.exe">
+            ⬇ Download for Windows
           </a>
-          <a class="btn btn-primary" href="https://github.com/mubashirtech56/youtube-downloader/releases/tag/v2.0.0">
-            View Release
+          <a class="btn btn-primary" href="https://github.com/mubashirtech56/youtube-downloader/releases/download/v2.0.0/youtube-downloader_1.0.0_amd64.deb">
+            ⬇ Download for Linux
           </a>
           <a class="btn btn-outline" href="https://github.com/mubashirtech56/youtube-downloader">
-             View Source
+            View Source
           </a>
         </div>
-        <p class="tiny">Linux · Debian/Ubuntu installer · <code>64-bit</code></p>
+        <p class="tiny">Windows <code>.exe</code> · Linux Debian/Ubuntu <code>.deb</code> · via GitHub Releases</p>
       </div>
       <div class="hero-art">
         <img src="youtube-dl.png" alt="YouTube Downloader Pro logo">
@@ -296,17 +296,19 @@
     <div class="container">
       <div class="download-card">
         <div class="big">📦</div>
-        <h2>Download for Linux</h2>
-        <p class="sub">Debian / Ubuntu installer (amd64) · v2.0.0 · ~require ffmpeg</p>
+        <h2>Download</h2>
+        <p class="sub">Windows · Linux (Debian/Ubuntu) · v2.0.0 · requires ffmpeg</p>
         <div class="hero-buttons" style="justify-content:center;">
-          <a class="btn btn-green" href="https://github.com/mubashirtech56/youtube-downloader/releases/tag/v2.0.0">
-            ⬇ Download .deb installer
+          <a class="btn btn-green" href="https://github.com/mubashirtech56/youtube-downloader/releases/download/v2.0.0/youtube-downloader.exe">
+            ⬇ Download Windows .exe
+          </a>
+          <a class="btn btn-primary" href="https://github.com/mubashirtech56/youtube-downloader/releases/download/v2.0.0/youtube-downloader_1.0.0_amd64.deb">
+            ⬇ Download Linux .deb
           </a>
           <a class="btn btn-outline" href="https://github.com/mubashirtech56/youtube-downloader/releases/tag/v2.0.0">
             📄 Release notes
           </a>
         </div>
-        <p class="tiny">Windows <code>.exe</code> build coming soon — meantime you can run from source.</p>
       </div>
     </div>
   </section>
@@ -319,10 +321,10 @@
         <div class="table-card">
           <h3>📦 From the .deb package</h3>
           <pre><code><span class="c"># Debian / Ubuntu</span>
-sudo apt install <span class="cm">./youtube-downloader_2.0.0_amd64.deb</span>
+sudo apt install <span class="cm">./youtube-downloader_1.0.0_amd64.deb</span>
 
 <span class="c"># or from a direct download</span>
-sudo apt install <span class="cm">./youtube-downloader_2.0.0_amd64.deb</span>
+sudo apt install <span class="cm">./youtube-downloader_1.0.0_amd64.deb</span>
 
 <span class="cm"># launch</span>
 youtube-downloader</code></pre>
@@ -349,15 +351,16 @@ python main.py</code></pre>
           <h3>Installer</h3>
           <table>
             <tr><td>Linux (Debian/Ubuntu)</td><td class="yes">✅ .deb</td></tr>
-            <tr><td>Windows</td><td>✅ .exe (via source build)</td></tr>
+            <tr><td>Windows</td><td>✅ .exe</td></tr>
             <tr><td>macOS</td><td>⚠ Not yet</td></tr>
           </table>
         </div>
         <div class="table-card">
           <h3>Tech stack</h3>
           <table>
-            <tr><td>GUI</td><td>CustomTkinter 6.0.0</td></tr>
+            <tr><td>GUI</td><td>PySide6 (Qt 6)</td></tr>
             <tr><td>Download engine</td><td>yt-dlp 2026.7.4</td></tr>
+            <tr><td>JS runtime</td><td>Deno (bundled)</td></tr>
             <tr><td>Splash</td><td>C++17</td></tr>
             <tr><td>Packaging</td><td>PyInstaller + dpkg-deb</td></tr>
           </table>

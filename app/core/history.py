@@ -3,7 +3,6 @@
 import logging
 import threading
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from app.core.utils import data_dir

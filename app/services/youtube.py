@@ -8,9 +8,10 @@ import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.core.utils import is_valid_youtube_url
+from app.core.utils import bundled_js_runtime, is_valid_youtube_url
 from app.services import imports
 from app.core.settings import SettingsManager
+from app.services.errors import FetchError, friendly_fetch_error, is_cookie_error
 
 
 class YouTubeService:
@@ -33,9 +34,12 @@ class YouTubeService:
             "geo_bypass_country": "US",
             "format": "best",
             "cookiefile": self.settings.get("cookie_file") if self.settings else None,
-            "js_runtimes": {"node": {}},
             "extractor_args": {"youtube": {"player_client": ["default", "android_vr", "tv"]}},
         }
+        deno = bundled_js_runtime()
+        if deno:
+            self.ydl_opts["js_runtimes"] = {"deno": {"path": deno}}
+            self.logger.info("JS runtime (Deno) enabled: %s", deno)
 
     def _cache_get(self, key: str) -> Optional[Any]:
         entry = self._cache.get(key)
@@ -65,51 +69,108 @@ class YouTubeService:
         return opts
 
     def get_video_info(self, url: str) -> Optional[Dict[str, Any]]:
+        if not is_valid_youtube_url(url):
+            raise FetchError("Invalid YouTube URL")
+
+        cache_key = f"video:{url}"
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         try:
-            if not is_valid_youtube_url(url):
-                raise ValueError("Invalid YouTube URL")
-
-            cache_key = f"video:{url}"
-            cached = self._cache_get(cache_key)
-            if cached is not None:
-                return cached
-
-            with imports.yt_dlp().YoutubeDL(self._get_opts()) as ydl:
-                info = ydl.extract_info(url, download=False)
-                if not info:
-                    return None
-
-                video_formats, audio_formats = self._process_formats(info)
-
-                result = {
-                    "id": info.get("id", ""),
-                    "title": info.get("title", ""),
-                    "description": info.get("description", ""),
-                    "duration": info.get("duration", 0),
-                    "thumbnail": info.get("thumbnail", ""),
-                    "upload_date": info.get("upload_date", ""),
-                    "uploader": info.get("uploader", ""),
-                    "channel": info.get("channel", ""),
-                    "channel_id": info.get("channel_id", ""),
-                    "view_count": info.get("view_count", 0),
-                    "like_count": info.get("like_count", 0),
-                    "comment_count": info.get("comment_count", 0),
-                    "tags": info.get("tags", []),
-                    "categories": info.get("categories", []),
-                    "age_limit": info.get("age_limit", 0),
-                    "is_live": info.get("is_live", False),
-                    "webpage_url": info.get("webpage_url", url),
-                    "video_formats": video_formats,
-                    "audio_formats": audio_formats,
-                    "best_video": video_formats[0] if video_formats else None,
-                    "best_audio": audio_formats[0] if audio_formats else None,
-                    "height": video_formats[0].get("height", 0) if video_formats else 0,
-                }
-                self._cache_put(cache_key, result)
-                return result
+            opts = self._get_opts()
+            opts["ignoreerrors"] = False  # surface the real reason (bot check, DRM, ...)
+            info = self._extract_retry(url, opts)
+            if not info:
+                raise FetchError(
+                    "No video information returned. The video may be unavailable, "
+                    "private or requires cookies (see Account).")
+        except FetchError:
+            raise
         except Exception as e:
             self.logger.error(f"Error fetching video info: {e}")
-            return None
+            raise FetchError(friendly_fetch_error(e)) from e
+
+        video_formats, audio_formats = self._process_formats(info)
+
+        result = {
+            "id": info.get("id", ""),
+            "title": info.get("title", ""),
+            "description": info.get("description", ""),
+            "duration": info.get("duration", 0),
+            "thumbnail": info.get("thumbnail", ""),
+            "upload_date": info.get("upload_date", ""),
+            "uploader": info.get("uploader", ""),
+            "channel": info.get("channel", ""),
+            "channel_id": info.get("channel_id", ""),
+            "view_count": info.get("view_count", 0),
+            "like_count": info.get("like_count", 0),
+            "comment_count": info.get("comment_count", 0),
+            "tags": info.get("tags", []),
+            "categories": info.get("categories", []),
+            "age_limit": info.get("age_limit", 0),
+            "is_live": info.get("is_live", False),
+            "webpage_url": info.get("webpage_url", url),
+            "video_formats": video_formats,
+            "audio_formats": audio_formats,
+            "best_video": video_formats[0] if video_formats else None,
+            "best_audio": audio_formats[0] if audio_formats else None,
+            "height": video_formats[0].get("height", 0) if video_formats else 0,
+        }
+        self._cache_put(cache_key, result)
+        return result
+
+    def _extract_retry(self, url: str, opts: Dict[str, Any]) -> Optional[Any]:
+        """Extract metadata.
+
+        If the configured cookies are unusable — either yt-dlp cannot load them,
+        or they make YouTube return a stale player with no usable streams — retry
+        once without cookies so normal videos still work.
+        """
+        used_cookies = bool(opts.get("cookiefile") or opts.get("cookiesfrombrowser"))
+
+        def _without_cookies(o: Dict[str, Any]) -> Dict[str, Any]:
+            stripped = dict(o)
+            stripped.pop("cookiefile", None)
+            stripped.pop("cookiesfrombrowser", None)
+            return stripped
+
+        def _do(o: Dict[str, Any]) -> Optional[Any]:
+            with imports.yt_dlp().YoutubeDL(o) as ydl:
+                return ydl.extract_info(url, download=False)
+
+        retry_no_cookies = False
+        try:
+            info = _do(opts)
+        except Exception as e:
+            if is_cookie_error(e):
+                self.logger.warning("Cookie load failed, retrying without cookies: %s", e)
+                retry_no_cookies = True
+            elif used_cookies and "requested format is not available" in str(e).lower():
+                self.logger.warning("Stale cookies produced no streams, retrying without cookies: %s", e)
+                retry_no_cookies = True
+            else:
+                raise
+
+        if retry_no_cookies:
+            with imports.yt_dlp().YoutubeDL(_without_cookies(opts)) as ydl:
+                return ydl.extract_info(url, download=False)
+
+        if used_cookies and info and not self._has_usable_formats(info):
+            self.logger.warning("Cookies yielded no usable streams, retrying without cookies")
+            with imports.yt_dlp().YoutubeDL(_without_cookies(opts)) as ydl:
+                return ydl.extract_info(url, download=False)
+
+        return info
+
+    @staticmethod
+    def _has_usable_formats(info: Optional[Dict[str, Any]]) -> bool:
+        if not info:
+            return False
+        for fmt in info.get("formats") or []:
+            if fmt.get("vcodec") not in (None, "none") or fmt.get("acodec") not in (None, "none"):
+                return True
+        return False
 
     def _process_formats(self, info: Dict[str, Any]) -> Tuple[List[Dict], List[Dict]]:
         video_formats: List[Dict[str, Any]] = []
@@ -177,57 +238,60 @@ class YouTubeService:
         return [best_by_bitrate[b] for b in sorted(best_by_bitrate, reverse=True)]
 
     def get_playlist_info(self, url: str, max_items: int = 0) -> Optional[Dict[str, Any]]:
+        if not is_valid_youtube_url(url):
+            raise FetchError("Invalid YouTube URL")
+
+        cache_key = f"playlist:{url}:{max_items}"
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        opts = self._get_opts()
+        opts["extract_flat"] = "in_playlist"
+        if max_items > 0:
+            opts["playlist_items"] = f"1-{max_items}"
+
         try:
-            if not is_valid_youtube_url(url):
-                raise ValueError("Invalid YouTube URL")
-
-            cache_key = f"playlist:{url}:{max_items}"
-            cached = self._cache_get(cache_key)
-            if cached is not None:
-                return cached
-
-            opts = self._get_opts()
-            opts["extract_flat"] = "in_playlist"
-            if max_items > 0:
-                opts["playlist_items"] = f"1-{max_items}"
-
-            with imports.yt_dlp().YoutubeDL(opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-                if not info:
-                    return None
-
-                entries = []
-                for entry in info.get("entries", []):
-                    if entry:
-                        video_id = entry.get("id", "")
-                        thumbnail = entry.get("thumbnail", "")
-                        if not thumbnail and video_id:
-                            thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
-                        webpage_url = entry.get("webpage_url") or entry.get("url") or f"https://www.youtube.com/watch?v={video_id}"
-                        entries.append({
-                            "id": video_id,
-                            "title": entry.get("title", ""),
-                            "duration": entry.get("duration", 0),
-                            "thumbnail": thumbnail,
-                            "webpage_url": webpage_url,
-                        })
-
-                if max_items > 0 and len(entries) > max_items:
-                    entries = entries[:max_items]
-
-                result = {
-                    "title": info.get("title", ""),
-                    "description": info.get("description", ""),
-                    "uploader": info.get("uploader", ""),
-                    "view_count": info.get("view_count", 0),
-                    "entries": entries,
-                    "entry_count": len(entries),
-                    "max_items": max_items,
-                    "thumbnail": info.get("thumbnail", ""),
-                    "webpage_url": info.get("webpage_url", url),
-                }
-                self._cache_put(cache_key, result)
-                return result
+            info = self._extract_retry(url, opts)
+            if not info:
+                raise FetchError(
+                    "No playlist information returned. The playlist may be private "
+                    "or requires cookies (see Account).")
+        except FetchError:
+            raise
         except Exception as e:
             self.logger.error(f"Error fetching playlist info: {e}")
-            return None
+            raise FetchError(friendly_fetch_error(e)) from e
+
+        entries = []
+        for entry in info.get("entries", []):
+            if entry:
+                video_id = entry.get("id", "")
+                thumbnail = entry.get("thumbnail", "")
+                if not thumbnail and video_id:
+                    thumbnail = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
+                webpage_url = entry.get("webpage_url") or entry.get("url") or f"https://www.youtube.com/watch?v={video_id}"
+                entries.append({
+                    "id": video_id,
+                    "title": entry.get("title", ""),
+                    "duration": entry.get("duration", 0),
+                    "thumbnail": thumbnail,
+                    "webpage_url": webpage_url,
+                })
+
+        if max_items > 0 and len(entries) > max_items:
+            entries = entries[:max_items]
+
+        result = {
+            "title": info.get("title", ""),
+            "description": info.get("description", ""),
+            "uploader": info.get("uploader", ""),
+            "view_count": info.get("view_count", 0),
+            "entries": entries,
+            "entry_count": len(entries),
+            "max_items": max_items,
+            "thumbnail": info.get("thumbnail", ""),
+            "webpage_url": info.get("webpage_url", url),
+        }
+        self._cache_put(cache_key, result)
+        return result

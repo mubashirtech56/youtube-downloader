@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QScrollArea, QVBoxLayout, QWidget,
@@ -22,7 +22,7 @@ class PlaylistPage(QWidget):
         self.logger = logging.getLogger(__name__)
         self.current_playlist: Optional[Dict[str, Any]] = None
         self._entries: List[Dict[str, Any]] = []
-        self._entry_checkboxes: List[tuple] = []  # (id, entry, QCheckBox)
+        self._entry_checkbox_data: List[Dict[str, Any]] = []
         self._batch_index = 0
         self._render_job = 0
 
@@ -129,7 +129,9 @@ class PlaylistPage(QWidget):
     def _on_playlist_failed(self, payload: dict):
         self.fetch_btn.setEnabled(True)
         self.fetch_btn.setText("🔍 Fetch Playlist")
-        self.info_label.setText("Failed to fetch playlist (invalid URL or unavailable)")
+        message = payload.get("error") or "Failed to fetch playlist (invalid URL or unavailable)"
+        self.info_label.setText(f"Failed to fetch playlist: {message}")
+        self.info_label.setToolTip(message)
 
     def _render_playlist(self, playlist: Dict[str, Any]):
         count = playlist.get("entry_count", 0)
@@ -164,8 +166,6 @@ class PlaylistPage(QWidget):
         self._batch_index = end
         if self._batch_index < len(self._entries):
             job = self._render_job
-            from PySide6.QtCore import QTimer
-
             QTimer.singleShot(0, lambda: self._render_batch() if job == self._render_job else None)
 
     def _render_entry(self, entry: Dict[str, Any], idx: int):

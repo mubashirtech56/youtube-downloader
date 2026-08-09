@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QScrollArea, QVBoxLayout, QWidget,
@@ -100,8 +100,6 @@ class HistoryPage(QWidget):
         self._batch_index = end
         if self._batch_index < len(self._entries):
             job = self._render_job
-            from PySide6.QtCore import QTimer
-
             QTimer.singleShot(0, lambda: self._render_batch() if job == self._render_job else None)
 
     def _render_row(self, entry: Dict[str, Any]):

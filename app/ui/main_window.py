@@ -1,8 +1,6 @@
 """Main application window: sidebar navigation + stacked pages."""
 
 import logging
-from pathlib import Path
-from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
@@ -27,7 +25,7 @@ NAV_ITEMS = [
     ("⚙ Settings", "settings"),
 ]
 
-_VERSION = "v2.0.0"
+_VERSION = "v3.0.0"
 
 
 class MainWindow(QMainWindow):

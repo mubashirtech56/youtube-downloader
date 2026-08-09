@@ -1,7 +1,6 @@
 """Theme application for Qt (PySide6) — Modern-Dark / Light stylesheets."""
 
 import logging
-from typing import Optional
 
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication

@@ -16,7 +16,6 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.core.history import HistoryManager  # noqa: E402
-from app.core.settings import SettingsManager  # noqa: E402
 from app.core.utils import (  # noqa: E402
     format_duration,
     format_size,

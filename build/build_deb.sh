@@ -17,7 +17,7 @@ cd "$ROOT"
 
 APP_NAME="youtube-downloader"
 APP_ID="youtube.downloader"
-VERSION="${VERSION:-2.0.0}"
+VERSION="${VERSION:-3.0.0}"
 ARCH="${ARCH:-amd64}"
 PYTHON="${PYTHON:-$ROOT/venv/bin/python}"
 
@@ -33,30 +33,35 @@ echo "[deb] architecture: $ARCH"
 "$PYTHON" build/make_icons.py
 mkdir -p dist
 
-# --- 2. Build the native C++ splash launcher --------------------------------
-echo "[deb] building native splash launcher (C++)"
-g++ -O3 -std=c++17 -s -o dist/launcher splash/launcher.cpp
+# --- 2. Fetch the Deno JS runtime (YouTube n-challenge solving) -------------
+if [ ! -f deno/deno ]; then
+    echo "[deb] downloading Deno JS runtime (~90 MB)..."
+    "$PYTHON" build/fetch_deno.py
+fi
 
-# --- 3. Bundle the app with PyInstaller --------------------------------------
+# --- 3. Build the native C++ splash launcher (optional) ---------------------
+echo "[deb] building native splash launcher (C++)"
+if command -v g++ >/dev/null 2>&1; then
+    g++ -O3 -std=c++17 -s -o dist/launcher splash/launcher.cpp
+    echo "[deb] launcher built"
+else
+    echo "[deb] g++ not found - skipping splash launcher"
+fi
+
+# --- 4. Bundle the app with PyInstaller --------------------------------------
 echo "[deb] ensuring pyinstaller..."
 "$PYTHON" -m pip install --quiet --upgrade pyinstaller
 
 echo "[deb] building app bundle (this can take a minute)..."
+rm -rf dist/youtube-downloader
 "$PYTHON" -m PyInstaller \
     --noconfirm \
     --clean \
-    --name "$APP_NAME" \
-    --onedir \
-    --windowed \
-    --icon "build/icons/youtube-downloader.ico" \
-    --add-data "youtube-dl.png:." \
-    --add-data "build/icons:icons" \
-    --hidden-import "secretstorage" \
-    --hidden-import "jeepney" \
-    --hidden-import "cffi" \
-    main.py
+    --distpath dist \
+    --workpath build/pyi-linux \
+    build/linux.spec
 
-# --- 4. Assemble the package tree -------------------------------------------
+# --- 5. Assemble the package tree -------------------------------------------
 PKG_ROOT="$ROOT/build/deb-root"
 rm -rf "$PKG_ROOT"
 mkdir -p "$PKG_ROOT/DEBIAN"
@@ -95,8 +100,11 @@ chmod +x "$PKG_ROOT/DEBIAN/postinst"
 # App bundle + launcher under /usr/lib
 mkdir -p "$PKG_ROOT/usr/lib/$APP_NAME/app"
 cp -a "dist/$APP_NAME/." "$PKG_ROOT/usr/lib/$APP_NAME/app/"
-cp dist/launcher "$PKG_ROOT/usr/lib/$APP_NAME/launcher"
-chmod +x "$PKG_ROOT/usr/lib/$APP_NAME/launcher"
+if [ -f dist/launcher ]; then
+    cp dist/launcher "$PKG_ROOT/usr/lib/$APP_NAME/launcher"
+    chmod +x "$PKG_ROOT/usr/lib/$APP_NAME/launcher"
+fi
+chmod +x "$PKG_ROOT/usr/lib/$APP_NAME/app/$APP_NAME"
 
 # Launcher that hands control to the C++ splash + bundled binary.
 cat > "$PKG_ROOT/usr/bin/$APP_NAME" <<EOF
@@ -129,7 +137,7 @@ EOF
 cp build/icons/youtube-downloader-512.png \
    "$PKG_ROOT/usr/share/icons/hicolor/512x512/apps/youtube-downloader.png"
 
-# --- 5. Build the .deb -------------------------------------------------------
+# --- 6. Build the .deb -------------------------------------------------------
 echo "[deb] building package..."
 mkdir -p dist
 dpkg-deb --build --root-owner-group "$PKG_ROOT" "dist/${APP_NAME}_${VERSION}_${ARCH}.deb"

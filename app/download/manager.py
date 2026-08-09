@@ -14,15 +14,16 @@ import time
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal, Qt, QThread, QTimer
+from PySide6.QtCore import QObject, Signal, QTimer
 
 from app.core.history import HistoryManager
 from app.core.models import DownloadItem
 from app.core.settings import SettingsManager
-from app.core.utils import sanitize_filename, strip_ansi
+from app.core.utils import bundled_js_runtime, sanitize_filename, strip_ansi
 from app.services import imports
+from app.services.errors import is_cookie_error
 
 
 class DownloadCancelled(Exception):
@@ -53,7 +54,6 @@ class DownloadManager(QObject):
 
         self.download_queue: List[DownloadItem] = []
         self.active_downloads: Dict[str, threading.Thread] = {}
-        self.is_processing = True
         self.max_concurrent = int(settings.get("max_concurrent_downloads", 3) or 3)
         self.lock = threading.RLock()
         self._progress_last: Dict[str, float] = {}
@@ -201,9 +201,11 @@ class DownloadManager(QObject):
             "restrictfilenames": True,
             "outtmpl": str(output_dir / f"{filename}.%(ext)s"),
             "format": format_selector,
-            "js_runtimes": {"node": {}},
             "extractor_args": {"youtube": {"player_client": ["default", "android_vr", "tv"]}},
         }
+        deno = bundled_js_runtime()
+        if deno:
+            opts["js_runtimes"] = {"deno": {"path": deno}}
         if is_audio_only:
             opts["postprocessors"] = [{
                 "key": "FFmpegExtractAudio",
@@ -224,12 +226,11 @@ class DownloadManager(QObject):
 
     def _download_thread(self, item: DownloadItem, opts: Dict[str, Any]):
         try:
-            with imports.yt_dlp().YoutubeDL(opts) as ydl:
-                ydl.download([item.url])
-                item.status = "completed"
-                item.end_time = datetime.now()
-                self._record_completed(item)
-                self.event.emit(self.EVENT_COMPLETED, deepcopy(item.snapshot()))
+            self._run_download(item, opts)
+            item.status = "completed"
+            item.end_time = datetime.now()
+            self._record_completed(item)
+            self.event.emit(self.EVENT_COMPLETED, deepcopy(item.snapshot()))
         except DownloadCancelled:
             item.status = "cancelled"
             item.end_time = datetime.now()
@@ -248,6 +249,25 @@ class DownloadManager(QObject):
         finally:
             with self.lock:
                 self.active_downloads.pop(item.id, None)
+
+    def _run_download(self, item: DownloadItem, opts: Dict[str, Any]):
+        """Run yt-dlp once, retrying without cookies on cookie errors or stale
+        cookies that produce "Requested format is not available"."""
+        used_cookies = bool(opts.get("cookiefile") or opts.get("cookiesfrombrowser"))
+        try:
+            with imports.yt_dlp().YoutubeDL(opts) as ydl:
+                ydl.download([item.url])
+        except Exception as e:
+            no_formats = "requested format is not available" in str(e).lower()
+            if is_cookie_error(e) or (used_cookies and no_formats):
+                self.logger.warning("Cookie-related download failure, retrying without cookies: %s", e)
+                stripped = dict(opts)
+                stripped.pop("cookiefile", None)
+                stripped.pop("cookiesfrombrowser", None)
+                with imports.yt_dlp().YoutubeDL(stripped) as ydl:
+                    ydl.download([item.url])
+            else:
+                raise
 
     def _progress_hook(self, d: Dict[str, Any], item: DownloadItem):
         if item.cancel_event.is_set():
@@ -339,7 +359,6 @@ class DownloadManager(QObject):
 
     def stop_all(self):
         with self.lock:
-            self.is_processing = False
             for item in self.download_queue:
                 if item.status in ("downloading", "pending", "starting", "paused"):
                     item.status = "cancelled"
@@ -353,7 +372,6 @@ class DownloadManager(QObject):
         if self._scheduler is not None:
             self._scheduler.stop()
         with self.lock:
-            self.is_processing = False
             for item in self.download_queue:
                 if item.status in ("downloading", "pending", "starting", "paused"):
                     item.status = "cancelled"

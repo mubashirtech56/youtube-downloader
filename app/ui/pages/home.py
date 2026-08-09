@@ -1,9 +1,8 @@
 """Home page — search, preview and download a single video."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QButtonGroup, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -23,8 +22,6 @@ class HomePage(QWidget):
         self.current_video: Optional[Dict[str, Any]] = None
         self.selected_format: Optional[Dict[str, Any]] = None
         self._rendered_video_id: Optional[str] = None
-        self._video_format_buttons: List[tuple] = []
-        self._audio_format_buttons: List[tuple] = []
 
         controller.videoFetched.connect(self._on_video_fetched)
         controller.videoFailed.connect(self._on_video_failed)
@@ -224,8 +221,6 @@ class HomePage(QWidget):
 
         self._clear(self.video_layout, self.video_group)
         self._clear(self.audio_layout, self.audio_group)
-        self._video_format_buttons = []
-        self._audio_format_buttons = []
 
         for fmt in info.get("video_formats", []):
             self._create_format_row(self.video_layout, self.video_group, fmt, "video")
@@ -269,7 +264,6 @@ class HomePage(QWidget):
         layout.addWidget(row)
         group.addButton(radio)
         radio.toggled.connect(lambda checked, f=fmt: self._on_radio(checked, f))
-        self._video_format_buttons.append((radio, fmt)) if kind == "video" else self._audio_format_buttons.append((radio, fmt))
 
     def _on_radio(self, checked: bool, fmt: Dict[str, Any]):
         if checked:

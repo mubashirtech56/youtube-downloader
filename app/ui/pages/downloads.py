@@ -72,8 +72,6 @@ class DownloadsPage(QWidget):
         if self._refresh_pending:
             return
         self._refresh_pending = True
-        from PySide6.QtCore import QTimer
-
         QTimer.singleShot(120, self._refresh_now)
 
     def _refresh_now(self):

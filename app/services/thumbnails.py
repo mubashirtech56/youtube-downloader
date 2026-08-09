@@ -4,7 +4,6 @@ import hashlib
 import io
 import logging
 import time
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 from app.core.utils import data_dir

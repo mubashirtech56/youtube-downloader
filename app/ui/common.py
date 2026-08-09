@@ -2,9 +2,9 @@
 
 from typing import Any, Optional
 
-from PySide6.QtCore import QByteArray, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QLabel
 
 
 def pil_to_qpixmap(image: Any, size: Optional[tuple] = None) -> QPixmap:
