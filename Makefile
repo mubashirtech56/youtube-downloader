@@ -10,6 +10,9 @@
 #   make clean             remove build artifacts
 #
 # Windows .exe must be built on Windows: run build\build_windows.bat
+#
+# Architecture: PySide6 UI  ->  MainController (ViewModel)  ->  DownloadManager
+#                              ->  yt-dlp / FFmpeg
 # ============================================================================
 
 PYTHON := venv/bin/python
@@ -39,7 +42,6 @@ windows:
 clean:
 	rm -rf build/deb-root build/youtube-downloader build/icons build/pyi-* \
 	       dist/youtube-downloader dist/launcher __pycache__ tests/__pycache__
-	rm -f youtube-downloader.spec
-	rm -f $(PWD)/*.spec
+	rm -f *.spec
 
-all: run
+all: test deb

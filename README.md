@@ -5,8 +5,9 @@
 **A fast, modern desktop application to download YouTube videos, playlists and audio — with a native C++ splash that makes startup instant.**
 
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![UI](https://img.shields.io/badge/UI-CustomTkinter-3B7EBF)](https://github.com/TomSchimansky/CustomTkinter)
+[![UI](https://img.shields.io/badge/UI-PySide6%20(Qt%206)-41CD52?logo=qt)](https://doc.qt.io/qtforpython-6/)
 [![Downloader](https://img.shields.io/badge/Engine-yt--dlp-red)](https://github.com/yt-dlp/yt-dlp)
+[![Architecture](https://img.shields.io/badge/Architecture-MVC-blueviolet)](#architecture)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-lightgrey)](#platform-support)
 [![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 
@@ -88,7 +89,7 @@ The repo ships a `Makefile` that drives every build target:
 | `make test` | Run the unit test suite |
 | `make icons` | Regenerate icon set from `youtube-dl.png` |
 | `make launcher` | Rebuild the native C++ splash launcher (Linux) |
-| `make deb` | Build `dist/youtube-downloader_1.0.0_amd64.deb` |
+| `make deb` | Build `dist/youtube-downloader_2.0.0_amd64.deb` |
 | `make windows` | Instructions for building the Windows `.exe` (Win machine) |
 | `make clean` | Remove all build artifacts |
 
@@ -106,6 +107,37 @@ build\build_windows.bat
 ```
 
 The generated bundle glues together a PyInstaller `onedir` build of `main.py`, the bundled icon set, and the native launcher (C++17, `splash/launcher.cpp`) using an env-variable handshake (`YDL_SPLASH_READY`) so the splash hides the moment the real window is mapped.
+
+---
+
+## 🏗 Architecture
+
+Built as a cleanly **layered** application so UI, business logic and the
+download engine can evolve independently:
+
+```
+  PySide6 (Qt 6)          →   UI layer          (app/ui/*)
+        ↓
+  MainController          →   Controller/ViewModel (app/controllers)
+        ↓
+  DownloadManager         →   Download Manager   (app/download)
+        ↓
+  yt-dlp / FFmpeg         →   Engine             (app/services + core)
+```
+
+| Layer | Location | Responsibility |
+| :--- | :--- | :--- |
+| **UI** | `app/ui/` | Qt widgets, pages, theming. Zero threading, zero network. |
+| **Controller** | `app/controllers/main_controller.py` | ViewModel: routes UI actions to services, reports results back via Qt signals. |
+| **Download Manager** | `app/download/manager.py` | Queue, concurrency, retries, progress throttling, cancellation; emits plain-dict snapshots over Qt signals. |
+| **Services** | `app/services/` | YouTube metadata extraction (`yt-dlp`) and thumbnail caching — blocking, thread-safe, widget-agnostic. |
+| **Core** | `app/core/` | Settings, history, models, utilities — no dependency on Qt or yt-dlp. |
+
+Key benefits over the old CustomTkinter monolith:
+
+- **No UI in worker threads** — threads only produce Qt signals/plain dicts; the GUI never locks against a download.
+- **Queue + retry + cancellation logic is fully unit-testable** without a window or a network.
+- **Swap-in engine** — the service layer is the only place that touches `yt-dlp`.
 
 ---
 
@@ -135,22 +167,29 @@ The suite covers the core services with mocks — URL validation, filename sanit
 
 ## 📁 Project Layout
 
+The code is organized around the layered architecture above:
+
 ```
 youtube-downloader/
-├── main.py                  # Application entry point & GUI
+├── main.py                  # Qt entry point (QApplication)
 ├── requirements.txt         # Python dependencies
 ├── Makefile                 # Build/run/test targets
 ├── youtube-dl.png           # App logo
+├── app/                     # Application package (layered)
+│   ├── core/                #   Settings, History, models, utilities
+│   ├── services/            #   YouTubeService + ThumbnailCache (yt-dlp)
+│   ├── download/            #   DownloadManager (queue/workers/signals)
+│   ├── controllers/         #   MainController (ViewModel)
+│   └── ui/                  #   PySide6 widgets, theme, main window, pages
 ├── build/                   # Packaging & assets
 │   ├── build_deb.sh         #   .deb builder
 │   ├── build_windows.bat    #   Windows .exe builder
-│   ├── make_icons.py        #   Icon generation
-│   └── youtube-downloader.spec  #   PyInstaller spec
+│   └── make_icons.py        #   Icon generation
 ├── splash/                  # Native C++ splash launcher
 │   ├── launcher.cpp         #   Linux implementation
 │   └── launcher_win.cpp     #   Windows implementation
 └── tests/
-    └── test_services.py     # Unit tests
+    └── test_services.py     # Unit tests (core + service + manager layers)
 ```
 
 ---
@@ -159,8 +198,9 @@ youtube-downloader/
 
 | Layer | Technology |
 | :--- | :--- |
-| **GUI** | [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) 6.0.0 |
-| **Download engine** | [yt-dlp](https://github.com/yt-dlp/yt-dlp) 2026.7.4 |
+| **GUI** | [PySide6 / Qt 6](https://doc.qt.io/qtforpython-6/) |
+| **Controller** | MainController (Qt signals / ViewModel) |
+| **Download engine** | [yt-dlp](https://github.com/yt-dlp/yt-dlp) 2026.7.4 + FFmpeg |
 | **Media tagging** | mutagen |
 | **Network / images** | requests • Pillow |
 | **Startup splash** | C++17 (`g++`), X11 / Win32 GDI |
@@ -169,7 +209,7 @@ youtube-downloader/
 ### Dependencies
 
 ```
-customtkinter==6.0.0
+PySide6>=6.6
 yt-dlp==2026.7.4
 yt-dlp-ejs==0.8.0
 secretstorage==3.5.0

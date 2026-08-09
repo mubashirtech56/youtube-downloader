@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------
 // Dependency-free native splash launcher for Windows.
 //
-// While the Python/CustomTkinter app boots (which is dominated by the toolkit,
+// While the PySide6 (Qt) app boots (which is dominated by the toolkit,
 // not by app code), this small binary shows a borderless Win32 window with a
 // growing progress bar so the user gets instant feedback.
 //

@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------
 // Dependency-free native splash launcher for the YouTube Downloader app.
 //
-// Why: the app's startup is dominated by the Tk/CustomTkinter toolkit, not
+// Why: the app's startup is dominated by the PySide6 (Qt) toolkit import, not
 // by Python code. This C++ binary erects a tiny native X11 window in ~10-30ms
 // by speaking the raw X wire protocol over the local socket (no gtk/Xlib
 // dev headers needed), so the user gets instant feedback while the Python

@@ -8,7 +8,7 @@ REM   build\build_windows.bat
 REM
 REM Produces:  dist\youtube-downloader.exe
 REM
-REM The .exe bundles main.py (CustomTkinter + yt-dlp), the YouTube icon, and a
+REM The .exe bundles main.py (PySide6 + yt-dlp), the YouTube icon, and a
 REM native C++ splash launcher (splash\launcher_win.exe) so startup feels fast.
 REM ===========================================================================
 setlocal EnableDelayedExpansion
@@ -71,7 +71,7 @@ echo [win] building exe (this can take a few minutes)...
     --hidden-import secretstorage ^
     --hidden-import jeepney ^
     --hidden-import cffi ^
-    --hidden-import "PIL._tkinter_finder" ^
+    
     main.py
 if errorlevel 1 goto :fail
 

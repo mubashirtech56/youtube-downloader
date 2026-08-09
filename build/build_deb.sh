@@ -8,7 +8,7 @@
 #
 # The package bundles a PyInstaller build of main.py plus the native C++
 # splash launcher (splash/launcher) so startup shows instantly while the
-# CustomTkinter GUI boots underneath.
+# PySide6 (Qt) GUI boots underneath.
 # ============================================================================
 set -euo pipefail
 
@@ -17,7 +17,7 @@ cd "$ROOT"
 
 APP_NAME="youtube-downloader"
 APP_ID="youtube.downloader"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-2.0.0}"
 ARCH="${ARCH:-amd64}"
 PYTHON="${PYTHON:-$ROOT/venv/bin/python}"
 
@@ -54,7 +54,6 @@ echo "[deb] building app bundle (this can take a minute)..."
     --hidden-import "secretstorage" \
     --hidden-import "jeepney" \
     --hidden-import "cffi" \
-    --hidden-import "PIL._tkinter_finder" \
     main.py
 
 # --- 4. Assemble the package tree -------------------------------------------
@@ -75,9 +74,9 @@ Priority: optional
 Architecture: $ARCH
 Maintainer: YouTube Downloader <support@example.com>
 Installed-Size: $(du -sk dist/$APP_NAME | awk '{print $1}')
-Depends: ffmpeg, libgl1
+Depends: ffmpeg, libgl1, libxcb-cursor0, libxkbcommon-x11-0
 Description: YouTube Downloader Pro
- A fast desktop YouTube downloader with playlist support, batch
+ A fast Qt-based desktop YouTube downloader with playlist support, batch
  downloads, audio extraction and a native C++ splash launcher.
 EOF
 
